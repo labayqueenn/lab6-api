@@ -268,6 +268,20 @@ class Database {
             PDO::ATTR_EMULATE_PREPARES   => false,
         );
 
+        // Optional SSL for MySQL (required by Aiven). Enabled when DB_SSL_CA is set.
+        if ($driver === 'mysql') {
+            $ssl_ca = getenv('DB_SSL_CA');
+            if (!empty($ssl_ca)) {
+                if (!preg_match('#^([A-Za-z]:)?[\\\\/]#', $ssl_ca)) {
+                    $ssl_ca = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . $ssl_ca;
+                }
+                $ssl_attr = defined('Pdo\Mysql::ATTR_SSL_CA')
+                    ? constant('Pdo\Mysql::ATTR_SSL_CA')
+                    : PDO::MYSQL_ATTR_SSL_CA;
+                $options[$ssl_attr] = $ssl_ca;
+            }
+        }
+
         try {
             $this->db = new PDO($dsn, $username, $password, $options);
             $this->driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
